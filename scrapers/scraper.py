@@ -5,9 +5,7 @@ from scrapers.crawlers import *
 from conf import AppConfig
 from typing import Dict, List
 from sqlalchemy.engine import Engine
-from sqlalchemy.orm import Session
 from scrapers.client import Client
-from orm.model import AdmissionType
 
 class Scraper:
     
@@ -28,23 +26,10 @@ class Scraper:
         }
 
     def fetch_available_years(self) -> List[AvailableYearsModel]:
-        # resp = self.client.get(self.base_url)
-        with open('C:\\Users\\ChungYu Lin\\Desktop\\scraper\\crawler\\scrapers\\resources\\交叉.html', mode='r', encoding='utf-8') as f:
-            resp = f.read()
+        resp = self.client.get(self.base_url)
         self.logger.info('開始解析學年度資料')
         parser = AvailableYearsParser()
         parsed = parser.parse(resp)
-        
-        # # 保存進資料庫
-        # save = []
-        # for i in parsed:
-        #     save.append(AdmissionType(name=i.method_name))
-
-        # with Session(self.db) as session:
-        #     for entity in save:
-        #         if not session.query(AdmissionType).filter_by(name=entity.name).first():
-        #             session.add(entity)
-        #     session.commit()
         
         return parsed
 
@@ -63,10 +48,6 @@ class Scraper:
                 try:
                     crawler = self.crawlers.get(current.method)
                     crawler.crawl(year)
-                    # with open('C:\\Users\\ChungYu Lin\\Desktop\\scraper\\crawler\\scrapers\\resources\\exam_test_1.html', mode='r', encoding='utf-8') as f:
-                    #     resp = f.read()
-                    # print(ExamAdmissionListParser().parse(resp))
-
                 except KeyError as e:
                     self.logger.error(f'找不到 {current.method} 入學管道的爬蟲')
                 

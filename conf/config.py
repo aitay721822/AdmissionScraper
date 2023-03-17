@@ -69,6 +69,10 @@ class AppConfig(BaseModel):
             cfg = AppConfig()
             AppConfig.save(cfg, path)
             return cfg
+        
+    @staticmethod
+    def default():
+        return AppConfig()
 
 if __name__ == '__main__':
     cfg = AppConfig()
