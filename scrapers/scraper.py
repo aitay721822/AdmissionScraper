@@ -1,4 +1,5 @@
 import logging
+import time
 from scrapers.model import AvailableYearsModel
 from scrapers.webparser import AvailableYearsParser 
 from scrapers.crawlers import *
@@ -48,6 +49,8 @@ class Scraper:
                 try:
                     crawler = self.crawlers.get(current.method)
                     crawler.crawl(year)
-                except KeyError as e:
+                    self.logger.info('爬取完成，等待 60 秒，再次爬取下一筆資料')
+                    time.sleep(60)
+                except KeyError:
                     self.logger.error(f'找不到 {current.method} 入學管道的爬蟲')
                 

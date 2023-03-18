@@ -1,4 +1,5 @@
 import os
+import sys
 import logging
 import argparse
 from sqlalchemy.engine import URL
@@ -26,10 +27,11 @@ def init(config_path: str):
             level=config.logger.level,
             format=config.logger.format,
             handlers=[
-                #logging.FileHandler(config.logger.file),
                 logging.StreamHandler(),
+                logging.FileHandler(config.logger.file, encoding='utf-8'),
             ]
         )
+        
         return logging.getLogger('main')
             
     def init_db(config: AppConfig):

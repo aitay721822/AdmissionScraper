@@ -102,8 +102,8 @@ class ExamCrawler(Crawler):
                 session.commit()
                 method = session.query(AdmissionType).filter(AdmissionType.name == '分科測驗').first()
             # Step2. 找到學校的 id
-            school = session.query(SchoolDepartment).filter(SchoolDepartment.school_name == university.school_name, 
-                                                            SchoolDepartment.depart_name == department.department_name).first()
+            school = session.query(SchoolDepartment).filter(SchoolDepartment.school_code == university.school_id, 
+                                                            SchoolDepartment.depart_code == department.department_id).first()
             if not school:
                 # 如果沒有該學校與校系, 則新增一個
                 session.add(SchoolDepartment(school_name=university.school_name, 
@@ -111,27 +111,33 @@ class ExamCrawler(Crawler):
                                              school_code=university.school_id,
                                              depart_code=department.department_id))
                 session.commit()
-                school = session.query(SchoolDepartment).filter(SchoolDepartment.school_name == university.school_name,
-                                                                SchoolDepartment.depart_name == department.department_name).first()
+                school = session.query(SchoolDepartment).filter(SchoolDepartment.school_code == university.school_id, 
+                                                                SchoolDepartment.depart_code == department.department_id).first()
             # Step 3. 存入榜單資訊
-            adimssionlist = AdmissionList(
-                year=year,
-                method_id=method.id,
-                school_department_id=department.department_id,
-                average_score=department.admission_score,
-                weight=department.admission_weights,
-                same_grade_order=admissions.order,
-                general_grade=admissions.general_grade,
-                native_grade=admissions.native_grade,
-                veteran_grade=admissions.veteran_grade,
-                oversea_grade=admissions.oversea_grade,
-            )
-            session.add(adimssionlist)
-            session.commit()
+            admission_info = session.query(AdmissionList).filter(AdmissionList.year == year,
+                                                                 AdmissionList.method_id == method.id,
+                                                                 AdmissionList.school_department_id == department.department_id).first()
+            if not admission_info:
+                session.add(AdmissionList(
+                    year=year,
+                    method_id=method.id,
+                    school_department_id=department.department_id,
+                    average_score=department.admission_score,
+                    weight=department.admission_weights,
+                    same_grade_order=admissions.order,
+                    general_grade=admissions.general_grade,
+                    native_grade=admissions.native_grade,
+                    veteran_grade=admissions.veteran_grade,
+                    oversea_grade=admissions.oversea_grade,
+                ))
+                session.commit()
+                admission_info = session.query(AdmissionList).filter(AdmissionList.year == year,
+                                                                     AdmissionList.method_id == method.id,
+                                                                     AdmissionList.school_department_id == department.department_id).first()
             # Step 4. 存入上榜資訊
             for admission in admissions.admission_list:
                 session.add(AdmissionPerson(
-                    admission_list_id=adimssionlist.id,
+                    admission_list_id=admission_info.id,
                     admission_ticket=admission.ticket,
                     exam_area=admission.exam_area,
                     admission_status='已錄取',
@@ -198,8 +204,8 @@ class StarCrawler(Crawler):
                 session.commit()
                 method = session.query(AdmissionType).filter(AdmissionType.name == '大學繁星').first()
             # Step2. 找到學校的 id
-            school = session.query(SchoolDepartment).filter(SchoolDepartment.school_name == university.school_name, 
-                                                            SchoolDepartment.depart_name == department.department_name).first()
+            school = session.query(SchoolDepartment).filter(SchoolDepartment.school_code == university.school_id, 
+                                                            SchoolDepartment.depart_code == department.department_id).first()
             if not school:
                 # 如果沒有該學校與校系, 則新增一個
                 session.add(SchoolDepartment(school_name=university.school_name, 
@@ -207,20 +213,26 @@ class StarCrawler(Crawler):
                                              school_code=university.school_id,
                                              depart_code=department.department_id))
                 session.commit()
-                school = session.query(SchoolDepartment).filter(SchoolDepartment.school_name == university.school_name,
-                                                                SchoolDepartment.depart_name == department.department_name).first()
+                school = session.query(SchoolDepartment).filter(SchoolDepartment.school_code == university.school_id, 
+                                                                SchoolDepartment.depart_code == department.department_id).first()
             # Step 3. 存入榜單資訊
-            adimssionlist = AdmissionList(
-                year=year,
-                method_id=method.id,
-                school_department_id=department.department_id,
-            )
-            session.add(adimssionlist)
-            session.commit()
+            admission_info = session.query(AdmissionList).filter(AdmissionList.year == year,
+                                                                 AdmissionList.method_id == method.id,
+                                                                 AdmissionList.school_department_id == department.department_id).first()
+            if not admission_info:
+                session.add(AdmissionList(
+                    year=year,
+                    method_id=method.id,
+                    school_department_id=department.department_id,
+                ))
+                session.commit()
+                admission_info = session.query(AdmissionList).filter(AdmissionList.year == year,
+                                                                     AdmissionList.method_id == method.id,
+                                                                     AdmissionList.school_department_id == department.department_id).first()
             # Step 4. 存入上榜資訊
             for admission in admissions:
                 session.add(AdmissionPerson(
-                    admission_list_id=adimssionlist.id,
+                    admission_list_id=admission_info.id,
                     admission_ticket=admission.ticket,
                     exam_area=admission.exam_area,
                     admission_status='已錄取',
@@ -319,8 +331,8 @@ class CrossCrawler(Crawler):
                 session.commit()
                 method = session.query(AdmissionType).filter(AdmissionType.name == '學測查榜').first()
             # Step2. 找到學校的 id
-            school = session.query(SchoolDepartment).filter(SchoolDepartment.school_name == university.school_name, 
-                                                            SchoolDepartment.depart_name == department.department_name).first()
+            school = session.query(SchoolDepartment).filter(SchoolDepartment.school_code == university.school_id, 
+                                                            SchoolDepartment.depart_code == department.department_id).first()
             if not school:
                 # 如果沒有該學校與校系, 則新增一個
                 session.add(SchoolDepartment(school_name=university.school_name, 
@@ -328,23 +340,29 @@ class CrossCrawler(Crawler):
                                              school_code=university.school_id,
                                              depart_code=department.department_id))
                 session.commit()
-                school = session.query(SchoolDepartment).filter(SchoolDepartment.school_name == university.school_name,
-                                                                SchoolDepartment.depart_name == department.department_name).first()
+                school = session.query(SchoolDepartment).filter(SchoolDepartment.school_code == university.school_id, 
+                                                                SchoolDepartment.depart_code == department.department_id).first()
             # Step 3. 存入榜單資訊
-            adimssionlist = AdmissionList(
-                year=year,
-                method_id=method.id,
-                school_department_id=department.department_id,
-                university_apply='大學個人申請' if not is_tech_university else '科大四技申請'
-            )
-            session.add(adimssionlist)
-            session.commit()
+            admission_info = session.query(AdmissionList).filter(AdmissionList.year == year,
+                                                                 AdmissionList.method_id == method.id,
+                                                                 AdmissionList.school_department_id == department.department_id).first()
+            if not admission_info:
+                session.add(AdmissionList(
+                    year=year,
+                    method_id=method.id,
+                    school_department_id=department.department_id,
+                    university_apply='大學個人申請' if not is_tech_university else '科大四技申請'
+                ))
+                session.commit()
+                admission_info = session.query(AdmissionList).filter(AdmissionList.year == year,
+                                                                     AdmissionList.method_id == method.id,
+                                                                     AdmissionList.school_department_id == department.department_id).first()
             # Step 4. 存入上榜資訊
             for admission in admissions:
                 for school in admission.schools:
                     if school.school_name == university.school_name and school.department_name == department.department_name:
                         session.add(AdmissionPerson(
-                            admission_list_id=adimssionlist.id,
+                            admission_list_id=admission_info.id,
                             admission_ticket=admission.ticket,
                             exam_area=admission.exam_area,
                             admission_status=school.status,
@@ -409,8 +427,8 @@ class VtechCrawler(Crawler):
                 session.commit()
                 method = session.query(AdmissionType).filter(AdmissionType.name == '統測甄選').first()
             # Step2. 找到學校的 id
-            school = session.query(SchoolDepartment).filter(SchoolDepartment.school_name == university.school_name, 
-                                                            SchoolDepartment.depart_name == department.department_name).first()
+            school = session.query(SchoolDepartment).filter(SchoolDepartment.school_code == university.school_id, 
+                                                            SchoolDepartment.depart_code == department.department_id).first()
             if not school:
                 # 如果沒有該學校與校系, 則新增一個
                 session.add(SchoolDepartment(school_name=university.school_name, 
@@ -418,23 +436,29 @@ class VtechCrawler(Crawler):
                                              school_code=university.school_id,
                                              depart_code=department.department_id))
                 session.commit()
-                school = session.query(SchoolDepartment).filter(SchoolDepartment.school_name == university.school_name,
-                                                                SchoolDepartment.depart_name == department.department_name).first()
+                school = session.query(SchoolDepartment).filter(SchoolDepartment.school_code == university.school_id, 
+                                                                SchoolDepartment.depart_code == department.department_id).first()
             # Step 3. 存入榜單資訊
-            adimssionlist = AdmissionList(
-                year=year,
-                method_id=method.id,
-                school_department_id=department.department_id,
-                group_code=department.group,
-            )
-            session.add(adimssionlist)
-            session.commit()
+            admission_info = session.query(AdmissionList).filter(AdmissionList.year == year,
+                                                                 AdmissionList.method_id == method.id,
+                                                                 AdmissionList.school_department_id == department.department_id).first()
+            if not admission_info:
+                session.add(AdmissionList(
+                    year=year,
+                    method_id=method.id,
+                    school_department_id=department.department_id,
+                    group_code=department.group,
+                ))
+                session.commit()
+                admission_info = session.query(AdmissionList).filter(AdmissionList.year == year,
+                                                                     AdmissionList.method_id == method.id,
+                                                                     AdmissionList.school_department_id == department.department_id).first()
             # Step 4. 存入上榜資訊
             for admission in admissions:
                 for school in admission.schools:
                     if school.school_name == university.school_name and school.department_name == department.department_name:
                         session.add(AdmissionPerson(
-                            admission_list_id=adimssionlist.id,
+                            admission_list_id=admission_info.id,
                             admission_ticket=admission.ticket,
                             admission_status=school.status,
                             second_stage_status=school.status,
@@ -500,8 +524,8 @@ class TechregCrawler(Crawler):
                 session.commit()
                 method = session.query(AdmissionType).filter(AdmissionType.name == '統測分發').first()
             # Step2. 找到學校的 id
-            school = session.query(SchoolDepartment).filter(SchoolDepartment.school_name == university.school_name, 
-                                                            SchoolDepartment.depart_name == department.department_name).first()
+            school = session.query(SchoolDepartment).filter(SchoolDepartment.school_code == university.school_id, 
+                                                            SchoolDepartment.depart_code == department.department_id).first()
             if not school:
                 # 如果沒有該學校與校系, 則新增一個
                 session.add(SchoolDepartment(school_name=university.school_name, 
@@ -509,26 +533,32 @@ class TechregCrawler(Crawler):
                                              school_code=university.school_id,
                                              depart_code=department.department_id))
                 session.commit()
-                school = session.query(SchoolDepartment).filter(SchoolDepartment.school_name == university.school_name,
-                                                                SchoolDepartment.depart_name == department.department_name).first()
+                school = session.query(SchoolDepartment).filter(SchoolDepartment.school_code == university.school_id, 
+                                                                SchoolDepartment.depart_code == department.department_id).first()
             # Step 3. 存入榜單資訊
-            adimssionlist = AdmissionList(
-                year=year,
-                method_id=method.id,
-                school_department_id=department.department_id,
-                group_code=department.group,
-                average_score=department.average_score,
-                general_grade=admissions.general_grade,
-                native_grade=admissions.native_grade,
-                veteran_grade=admissions.veteran_grade,
-                oversea_grade=admissions.oversea_grade,
-            )
-            session.add(adimssionlist)
-            session.commit()
+            admission_info = session.query(AdmissionList).filter(AdmissionList.year == year,
+                                                                 AdmissionList.method_id == method.id,
+                                                                 AdmissionList.school_department_id == department.department_id).first()
+            if not admission_info:
+                session.add(AdmissionList(
+                    year=year,
+                    method_id=method.id,
+                    school_department_id=department.department_id,
+                    group_code=department.group,
+                    average_score=department.average_score,
+                    general_grade=admissions.general_grade,
+                    native_grade=admissions.native_grade,
+                    veteran_grade=admissions.veteran_grade,
+                    oversea_grade=admissions.oversea_grade,
+                ))
+                session.commit()
+                admission_info = session.query(AdmissionList).filter(AdmissionList.year == year,
+                                                                     AdmissionList.method_id == method.id,
+                                                                     AdmissionList.school_department_id == department.department_id).first()
             # Step 4. 存入上榜資訊
             for admission in admissions.admission_list:
                 session.add(AdmissionPerson(
-                    admission_list_id=adimssionlist.id,
+                    admission_list_id=admission_info.id,
                     admission_ticket=admission.ticket,
                     admission_status='已錄取',
                 ))

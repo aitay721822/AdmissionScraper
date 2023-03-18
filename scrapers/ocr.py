@@ -1,8 +1,9 @@
 from io import BytesIO
 import re
 from PIL import Image
-import pytesseract
 import base64
+import numpy as np
+import pytesseract
 
 """
 Here is Mini Doc for pytesseract
@@ -36,26 +37,38 @@ OCR Engine Mode (OEM):
   3    Default, based on what is available.
 """
 
-pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
 base64_regex_pattern = re.compile(r'^.+?(;base64),')
-
 def base64_to_image(base64_string):
     base64_string = base64_regex_pattern.sub('', base64_string)
     img_data = base64.b64decode(base64_string)
-    return Image.open(BytesIO(img_data))
+    return Image.open(BytesIO(img_data)).convert('RGB')
 
-def image_to_text(image, lang='eng', config='--psm 3 --oem 3'):
-    return pytesseract.image_to_string(image, lang, config)
+class OCR:
+    _instance = None
+    
+    def __init__(self) -> None:
+        # 初始化 OCR 引擎 (使用 Tesseract)
+        pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
+        self.engine = pytesseract.image_to_string
+    
+    def ocr(self, image, lang, **kwargs) -> str:
+        if isinstance(image, str):
+            image = base64_to_image(image)
+        return self.engine(image, lang=lang, **kwargs)
 
-def base64_to_text(base64_string, lang='eng', config='--psm 3 --oem 3'):
-    return pytesseract.image_to_string(base64_to_image(base64_string), lang, config)
-
-def single_line_ocr(image, lang):
-    if isinstance(image, str):
-        image = base64_to_image(image)
-    return pytesseract.image_to_string(image, lang, config='--psm 7 --oem 3')
-
-def multi_line_ocr(image, lang):
-    if isinstance(image, str):
-        image = base64_to_image(image)
-    return pytesseract.image_to_string(image, lang, config='--psm 6 --oem 3')
+    def single_line_ocr(self, image, lang='eng', **kwargs) -> str:
+        kwargs['config'] = '--psm 7 --oem 3'
+        return self.ocr(image, lang, **kwargs)
+    
+    def multi_line_ocr(self, image, lang='eng', **kwargs) -> str:
+        kwargs['config'] = '--psm 6 --oem 3'
+        return self.ocr(image, lang, **kwargs)
+    
+    def single_character_ocr(self, image, lang='eng', **kwargs) -> str:
+        kwargs['config'] = '--psm 10 --oem 3'
+        return self.ocr(image, lang, **kwargs)
+        
+    def get_instance():
+        if OCR._instance is None:
+            OCR._instance = OCR()
+        return OCR._instance

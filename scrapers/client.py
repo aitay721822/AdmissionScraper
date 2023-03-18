@@ -3,8 +3,6 @@ import time
 import requests
 import cloudscraper
 
-logging.basicConfig(level=logging.DEBUG, format='%(asctime)s | %(levelname)s | %(name)s | %(message)s | %(filename)s:%(lineno)d', datefmt='%Y-%m-%d %H:%M:%S')
-
 class Client:
     
     _instance = None
@@ -27,6 +25,8 @@ class Client:
             # 檢查請求是否成功
             if resp and resp.status_code == 200:
                 return resp.text
+            else:
+                raise Exception(f'請求失敗，狀態碼: {resp.status_code}')
         except cloudscraper.exceptions.CloudflareChallengeError as e:
             resp = requests.post(self.config.flaresolverr_url, headers={'Content-Type': 'application/json'}, json={
                 "cmd": "request.get",
@@ -43,6 +43,7 @@ class Client:
                     self.logger.error(f'FlareSolverr 請求失敗，可能是 Cloudflare 驗證失敗')
             else:
                 self.logger.error(f'FlareSolverr 請求失敗，可能是 FlareSolverr Server 未啟動')
+                raise Exception(f'請求失敗，狀態碼: {resp.status_code}')
         
     def get(self, url):
         retry = 0

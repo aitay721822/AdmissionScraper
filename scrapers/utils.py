@@ -30,7 +30,7 @@ def split_school_department(s: str) -> Tuple[str, str]:
     m = regex_school_department_pattern.findall(s)
     if len(m) > 0 and len(m[0]) == 3:
         # 切割成功
-        return m[0][0], m[0][2]
+        return clean_string(m[0][0]), clean_string(m[0][2])
     else:
         # fallback 成一般的切割
         return clean_split(s, ' ', 1)

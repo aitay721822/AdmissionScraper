@@ -1,10 +1,13 @@
 
 
 from typing import Any, Dict, List
-from scrapers.ocr import single_line_ocr
 from bs4 import BeautifulSoup
+from scrapers.ocr import OCR
 from scrapers.model import *
 from scrapers.utils import *
+# from model import *
+# from ocr import *
+# from utils import *
 
 class Parser:
     """
@@ -99,13 +102,13 @@ class ExamDepartmentListParser(Parser):
         table = resp.find('table', id='table1')
         row = table.find_next('tr')
         while row:
-            item_elemets = row.find_all('div', id='university_dep_row_height')
-            if len(item_elemets) == 5:
-                department_id = clean_string(item_elemets[0].text).strip('()')
-                department_name = clean_string(item_elemets[1].text)
-                admission_href = clean_string(item_elemets[2].select_one('a').get('href'))
-                admission_score = clean_string(item_elemets[3].text.strip())
-                admission_weights = clean_string(item_elemets[4].select_one('img').get('title'))
+            item_elements = row.find_all('div', id='university_dep_row_height')
+            if item_elements and len(item_elements) == 5:
+                department_id = clean_string(item_elements[0].text).strip('()')
+                department_name = clean_string(item_elements[1].text)
+                admission_href = clean_string(item_elements[2].select_one('a').get('href'))
+                admission_score = clean_string(item_elements[3].text.strip())
+                admission_weights = clean_string(item_elements[4].select_one('img').get('title'))
                 departments.append(ExamDepartmentModel(
                     department_id=department_id,
                     department_name=department_name,
@@ -161,10 +164,10 @@ class ExamAdmissionListParser(Parser):
         table = info_table.find_next_sibling('table')
         row = table.find_next('tr')
         while row:
-            item_elemets = row.find_all('td', recursive=False)
-            if len(item_elemets) == 5:
-                ticket_examarea = clean_split(item_elemets[2].text, ' ', -1)
-                school, depart = split_school_department(item_elemets[4].text)
+            item_elements = row.find_all('td', recursive=False)
+            if item_elements and len(item_elements) == 5:
+                ticket_examarea = clean_split(item_elements[2].text, ' ', -1)
+                school, depart = split_school_department(item_elements[4].text)
                 admissions.append(ExamAdmissionModel(
                     ticket=ticket_examarea[0],
                     exam_area=ticket_examarea[-1],
@@ -189,11 +192,11 @@ class StarDepartmentListParser(Parser):
         table = resp.find('table', id='table1')
         row = table.find_next('tr')
         while row:
-            item_elemets = row.find_all('div', id='university_dep_row_height')
-            if len(item_elemets) == 5:
-                department_id = clean_string(item_elemets[0].text).strip("()")
-                department_name = clean_string(item_elemets[1].text)
-                admission_href = clean_string(item_elemets[2].select_one('a').get('href'))
+            item_elements = row.find_all('div', id='university_dep_row_height')
+            if item_elements and len(item_elements) == 5:
+                department_id = clean_string(item_elements[0].text).strip("()")
+                department_name = clean_string(item_elements[1].text)
+                admission_href = clean_string(item_elements[2].select_one('a').get('href'))
                 departments.append(StarDepartmentModel(
                     department_id=department_id,
                     department_name=department_name,
@@ -211,10 +214,10 @@ class StarAdmissionListParser(Parser):
         table = main_content.find_next('table')
         row = table.find_next('tr')
         while row:
-            item_elemets = row.find_all('td', recursive=False)
-            if len(item_elemets) == 5:
-                ticket_examarea = clean_split(item_elemets[2].text, ' ', -1)
-                school, depart = split_school_department(item_elemets[4].text)
+            item_elements = row.find_all('td', recursive=False)
+            if item_elements and len(item_elements) == 5:
+                ticket_examarea = clean_split(item_elements[2].text, ' ', -1)
+                school, depart = split_school_department(item_elements[4].text)
                 admissions.append(StarAdmissionModel(
                     ticket=ticket_examarea[0],
                     exam_area=ticket_examarea[-1],
@@ -231,12 +234,12 @@ class CrossDepartmentListParser(Parser):
         table = resp.find('table', id='table1')
         row = table.find_next('tr')
         while row:
-            item_elemets = row.find_all('td', id='university_dep_row_height')
-            if len(item_elemets) == 5:
-                department_id = clean_string(item_elemets[0].text).strip("()")
-                department_name = clean_string(item_elemets[1].text)
-                admission_href = clean_string(item_elemets[2].select_one('a').get('href'))
-                release_status = clean_string(item_elemets[4].text)
+            item_elements = row.find_all('td', id='university_dep_row_height')
+            if item_elements and len(item_elements) == 5:
+                department_id = clean_string(item_elements[0].text).strip("()")
+                department_name = clean_string(item_elements[1].text)
+                admission_href = clean_string(item_elements[2].select_one('a').get('href'))
+                release_status = clean_string(item_elements[4].text)
                 departments.append(CrossDepartmentModel(
                     department_id=department_id,
                     department_name=department_name,
@@ -255,34 +258,34 @@ class CrossAdmissionListParser(Parser):
         table = main_content.find('table', recursive=False)
         row = table.find_next('tr')
         while row:
-            item_elemets = row.find_all('td', recursive=False)
-            if len(item_elemets) == 5:
+            item_elements = row.find_all('td', recursive=False)
+            if item_elements and len(item_elements) == 5:
                 # TODO: 名稱 OCR
                 
                 # 准考證號碼、考區
-                ticket_examarea_element = item_elemets[2]
-                ticket = clean_string(single_line_ocr(ticket_examarea_element.select_one('img').get('src'), lang='eng'))
+                ticket_examarea_element = item_elements[2]
+                ticket = clean_string(OCR.get_instance().single_line_ocr(ticket_examarea_element.select_one('img').get('src')))
                 examarea = clean_split(ticket_examarea_element.select_one('a').text, ':')[-1]
-                
+
                 # 學校錄取情況
                 school_admission_status = []
-                school_depart_element = item_elemets[4].find_next('table')
+                school_depart_element = item_elements[4].find_next('table')
                 school_row = school_depart_element.find_next('tr')
                 while school_row:
-                    item_elemets = school_row.find_all('td', recursive=False)
-                    if len(item_elemets) == 3:
+                    school_item_elements = school_row.find_all('td', recursive=False)
+                    if school_item_elements and len(school_item_elements) == 3:
                         # 檢查是否分發錄取
-                        is_admission = True if item_elemets[0].find('img', {'title': '分發錄取'}) else False
+                        is_admission = True if school_item_elements[0].find('img', {'title': '分發錄取'}) else False
                         # 學校、科系
-                        school_depart_text = clean_string(item_elemets[1].select_one('a').text)
+                        school_depart_text = clean_string(school_item_elements[1].select_one('a').text)
                         if school_depart_text:
                             school, depart = split_school_department(school_depart_text)
                             # 二階甄試
-                            release_status_element = item_elemets[2].select_one('img')
-                            release_date = clean_string(item_elemets[2].select_one('div.retestdate').text)
+                            release_status_element = school_item_elements[2].select_one('img')
+                            release_date = clean_string(school_item_elements[2].select_one('div.retestdate').text)
                             if release_status_element:
                                 admit = clean_string(release_status_element.parent.get('class')[0]) == 'leftred'
-                                release_status = clean_string(single_line_ocr(release_status_element.get('src'), lang='eng'))
+                                release_status = clean_string(OCR.get_instance().single_line_ocr(release_status_element.get('src')))
                                 release_status = '正取' if admit else '備取' + release_status
                             else:
                                 release_status = '' if not release_date else release_date
@@ -309,12 +312,12 @@ class VtechDepartmentListParser(Parser):
         table = resp.find('table', id='table1')
         row = table.find_next('tr')
         while row:
-            item_elemets = row.find_all('td', id='university_dep_row_height')
-            if len(item_elemets) == 5:
-                department_id = clean_string(item_elemets[0].text).strip("()")
-                department_name = clean_string(item_elemets[1].text)
-                admission_href = clean_string(item_elemets[2].select_one('a').get('href'))
-                group = clean_string(item_elemets[3].text)
+            item_elements = row.find_all('td', id='university_dep_row_height')
+            if item_elements and len(item_elements) == 5:
+                department_id = clean_string(item_elements[0].text).strip("()")
+                department_name = clean_string(item_elements[1].text)
+                admission_href = clean_string(item_elements[2].select_one('a').get('href'))
+                group = clean_string(item_elements[3].text)
                 departments.append(VtechDepartmentModel(
                     department_id=department_id,
                     department_name=department_name,
@@ -333,32 +336,32 @@ class VtechAdmissionParser(Parser):
         table = main_content.find('table', recursive=False)
         row = table.find_next('tr')
         while row:
-            item_elemets = row.find_all('td', recursive=False)
-            if len(item_elemets) == 5:
+            item_elements = row.find_all('td', recursive=False)
+            if item_elements and len(item_elements) == 5:
                 # 准考證號碼
-                ticket_examarea_element = item_elemets[2]
-                ticket = clean_string(single_line_ocr(ticket_examarea_element.select_one('img').get('src'), lang='eng'))
+                ticket_examarea_element = item_elements[2]
+                ticket = clean_string(OCR.get_instance().single_line_ocr(ticket_examarea_element.select_one('img').get('src')))
                 
                 # 學校錄取情況
                 school_admission_status = []
-                school_depart_element = item_elemets[4].find_next('table')
+                school_depart_element = item_elements[4].find_next('table')
                 school_row = school_depart_element.find_next('tr')
                 while school_row:
-                    item_elemets = school_row.find_all('td', recursive=False)
-                    if len(item_elemets) == 3:
+                    school_item_elements = school_row.find_all('td', recursive=False)
+                    if school_item_elements and len(school_item_elements) == 3:
                         # 檢查是否分發錄取
-                        is_admission = True if item_elemets[0].find('img', {'title': '分發錄取'}) else False
+                        is_admission = True if school_item_elements[0].find('img', {'title': '分發錄取'}) else False
                         # 學校、科系
-                        school_depart_text = clean_string(item_elemets[1].select_one('a').text)
+                        school_depart_text = clean_string(school_item_elements[1].select_one('a').text)
                         if school_depart_text:
                             school, depart = split_school_department(school_depart_text)
                             # 二階甄試
-                            release_status_element = item_elemets[2].select_one('img')
-                            release_date = clean_string(item_elemets[2].select_one('div.retestdate').text)
+                            release_status_element = school_item_elements[2].select_one('img')
+                            release_date = clean_string(school_item_elements[2].select_one('div.retestdate').text)
                             if release_status_element:
-                                prefix_string = clean_string(item_elemets[2].text)
+                                prefix_string = clean_string(school_item_elements[2].text)
                                 admit = clean_string(release_status_element.parent.get('class')[0]) == 'leftred'
-                                release_status = clean_string(single_line_ocr(release_status_element.get('src'), lang='eng'))
+                                release_status = clean_string(OCR.get_instance().single_line_ocr(release_status_element.get('src')))
                                 release_status = '正取' if admit else '備取' + release_status
                                 release_status = prefix_string + release_status
                             else:
@@ -453,13 +456,13 @@ class TechregAdmissionParser(Parser):
             admission_list=admissions
         )
 
-# if __name__ == '__main__':
-#     import os
-#     print(os.getcwd())
-#     with open(os.path.join(os.getcwd(), 'crawler\\scrapers\\resources\\techreg_test.html'), 'r', encoding='utf-8') as f:
-#         html_content = f.read()
-#         result = TechregAdmissionParser().parse(html_content)
-#         try:
-#             print(*result, sep='\n')
-#         except:
-#             print(result)
+if __name__ == '__main__':
+    import os
+    print(os.getcwd())
+    with open(os.path.join(os.getcwd(), 'scrapers\\resources\\cross_test.html'), 'r', encoding='utf-8') as f:
+        html_content = f.read()
+        result = CrossAdmissionListParser().parse(html_content)
+        try:
+            print(*result, sep='\n')
+        except:
+            print(result)
