@@ -38,6 +38,7 @@ class Client:
                 if j and j.get('status') == 'ok':
                     self.logger.info(f'FlareSolverr 請求成功，正在更新 cookies')
                     self.cookies = {i['name']:i['value'] for i in j['solution']['cookies']}
+                    self.user_agent = j['solution']['userAgent']
                     return j['solution']['response']
                 else:
                     self.logger.error(f'FlareSolverr 請求失敗，可能是 Cloudflare 驗證失敗')
