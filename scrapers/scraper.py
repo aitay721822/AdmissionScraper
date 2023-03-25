@@ -19,11 +19,11 @@ class Scraper:
         self.db = db
         self.client = Client.get_instance(config.flaresolverr)
         self.crawlers: Dict[str, Crawler] = {
-            'exam': ExamCrawler(config, db),
-            'star': StarCrawler(config, db),
             'cross': CrossCrawler(config, db),
             'vtech': VtechCrawler(config, db),
             'techreg': TechregCrawler(config, db),
+            'exam': ExamCrawler(config, db),
+            'star': StarCrawler(config, db),
         }
 
     def fetch_available_years(self) -> List[AvailableYearsModel]:
@@ -48,9 +48,12 @@ class Scraper:
                 self.logger.info(f'開始爬取 {year} 學年度 {current.method} 入學管道的資料')
                 try:
                     crawler = self.crawlers.get(current.method)
+                    if not crawler:
+                        raise KeyError(f'找不到 {current.method} 入學管道的爬蟲')
+                    
                     crawler.crawl(year)
                     self.logger.info('爬取完成，等待 60 秒，再次爬取下一筆資料')
                     time.sleep(60)
-                except KeyError:
-                    self.logger.error(f'找不到 {current.method} 入學管道的爬蟲')
+                except Exception as e:
+                    self.logger.error(f'{e}')
                 

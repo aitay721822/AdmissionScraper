@@ -23,7 +23,7 @@ def clean_split(s: str, sep: str, cut: int=-1) -> List[str]:
 """
 將含有大學字串、科系字串的字串切割成大學字串、科系字串
 """
-regex_school_department_pattern = re.compile(r"(.+(大學|學院|學校))\s*(.*)")
+regex_school_department_pattern = re.compile(r"(.+?(大學|學院|學校))\s*(.*)")
 def split_school_department(s: str) -> Tuple[str, str]:
     s = clean_string(s)
     # 先嘗試能不能用正規表達式切割
@@ -38,12 +38,12 @@ def split_school_department(s: str) -> Tuple[str, str]:
 """
 將含有大學ID字串、大學名稱的字串切割成大學ID、大學名稱
 """
-regex_school_id_name_pattern = re.compile(r"(\d+)\s*(.+大學|學院|學校)")
+regex_school_id_name_pattern = re.compile(r"(\d+)\s*(.+(大學|學院|學校))")
 def split_school_id_name(s: str) -> Tuple[str, str]:
     s = clean_string(s)
     m = regex_school_id_name_pattern.findall(s)
-    if len(m) > 0 and len(m[0]) == 2:
-        return m[0][0], m[0][1]
+    if len(m) > 0 and len(m[0]) == 3:
+        return clean_string(m[0][0]), clean_string(m[0][1])
     else:
         # fallback 成一般的切割
         return clean_split(s, ' ', 1)    

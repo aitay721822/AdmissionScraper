@@ -116,12 +116,12 @@ class ExamCrawler(Crawler):
             # Step 3. 存入榜單資訊
             admission_info = session.query(AdmissionList).filter(AdmissionList.year == year,
                                                                  AdmissionList.method_id == method.id,
-                                                                 AdmissionList.school_department_id == department.department_id).first()
+                                                                 AdmissionList.school_department_id == school.id).first()
             if not admission_info:
                 session.add(AdmissionList(
                     year=year,
                     method_id=method.id,
-                    school_department_id=department.department_id,
+                    school_department_id=school.id,
                     average_score=department.admission_score,
                     weight=department.admission_weights,
                     same_grade_order=admissions.order,
@@ -133,15 +133,43 @@ class ExamCrawler(Crawler):
                 session.commit()
                 admission_info = session.query(AdmissionList).filter(AdmissionList.year == year,
                                                                      AdmissionList.method_id == method.id,
-                                                                     AdmissionList.school_department_id == department.department_id).first()
+                                                                     AdmissionList.school_department_id == school.id).first()
+            else:
+                session.query(AdmissionList).filter(AdmissionList.id == admission_info.id).update({
+                    AdmissionList.year: year,
+                    AdmissionList.method_id: method.id,
+                    AdmissionList.school_department_id: school.id,
+                    AdmissionList.average_score: department.admission_score,
+                    AdmissionList.weight: department.admission_weights,
+                    AdmissionList.same_grade_order: admissions.order,
+                    AdmissionList.general_grade: admissions.general_grade,
+                    AdmissionList.native_grade: admissions.native_grade,
+                    AdmissionList.veteran_grade: admissions.veteran_grade,
+                    AdmissionList.oversea_grade: admissions.oversea_grade,
+                })
+                session.commit()
+                
             # Step 4. 存入上榜資訊
             for admission in admissions.admission_list:
-                session.add(AdmissionPerson(
-                    admission_list_id=admission_info.id,
-                    admission_ticket=admission.ticket,
-                    exam_area=admission.exam_area,
-                    admission_status='已錄取',
-                ))
+                person = session.query(AdmissionPerson).filter(AdmissionPerson.admission_list_id == admission_info.id,
+                                                               AdmissionPerson.admission_ticket == admission.ticket).first()
+                if not person:
+                    try:
+                        session.add(AdmissionPerson(
+                            admission_list_id=admission_info.id,
+                            admission_ticket=admission.ticket,
+                            exam_area=admission.exam_area,
+                            admission_status='已錄取',
+                        ))
+                    except ValueError as e:
+                        self.logger.warning('[Exam] 存入錄取資訊失敗, 原因: {}, 可能是欄位錯誤'.format(e))
+                else:
+                    session.query(AdmissionPerson).filter(AdmissionPerson.id == person.id).update({
+                        AdmissionPerson.admission_list_id: admission_info.id,
+                        AdmissionPerson.admission_ticket: admission.ticket,
+                        AdmissionPerson.exam_area: admission.exam_area,
+                        AdmissionPerson.admission_status: '已錄取',
+                    })
             session.commit()
 
 class StarCrawler(Crawler):
@@ -218,25 +246,45 @@ class StarCrawler(Crawler):
             # Step 3. 存入榜單資訊
             admission_info = session.query(AdmissionList).filter(AdmissionList.year == year,
                                                                  AdmissionList.method_id == method.id,
-                                                                 AdmissionList.school_department_id == department.department_id).first()
+                                                                 AdmissionList.school_department_id == school.id).first()
             if not admission_info:
                 session.add(AdmissionList(
                     year=year,
                     method_id=method.id,
-                    school_department_id=department.department_id,
+                    school_department_id=school.id,
                 ))
                 session.commit()
                 admission_info = session.query(AdmissionList).filter(AdmissionList.year == year,
                                                                      AdmissionList.method_id == method.id,
-                                                                     AdmissionList.school_department_id == department.department_id).first()
+                                                                     AdmissionList.school_department_id == school.id).first()
+            else:
+                session.query(AdmissionList).filter(AdmissionList.id == admission_info.id).update({
+                    AdmissionList.year: year,
+                    AdmissionList.method_id: method.id,
+                    AdmissionList.school_department_id: school.id,
+                })
+                session.commit()
             # Step 4. 存入上榜資訊
             for admission in admissions:
-                session.add(AdmissionPerson(
-                    admission_list_id=admission_info.id,
-                    admission_ticket=admission.ticket,
-                    exam_area=admission.exam_area,
-                    admission_status='已錄取',
-                ))
+                person = session.query(AdmissionPerson).filter(AdmissionPerson.admission_list_id == admission_info.id,
+                                                               AdmissionPerson.admission_ticket == admission.ticket).first()
+                if not person:
+                    try:
+                        session.add(AdmissionPerson(
+                            admission_list_id=admission_info.id,
+                            admission_ticket=admission.ticket,
+                            exam_area=admission.exam_area,
+                            admission_status='已錄取',
+                        ))
+                    except ValueError as e:
+                        self.logger.warning('[Star] 存入錄取資訊失敗, 原因: {}, 可能是欄位錯誤'.format(e))
+                else:
+                    session.query(AdmissionPerson).filter(AdmissionPerson.id == person.id).update({
+                        AdmissionPerson.admission_list_id: admission_info.id,
+                        AdmissionPerson.admission_ticket: admission.ticket,
+                        AdmissionPerson.exam_area: admission.exam_area,
+                        AdmissionPerson.admission_status: '已錄取',
+                    })
             session.commit()
             
 class CrossCrawler(Crawler):
@@ -306,7 +354,7 @@ class CrossCrawler(Crawler):
                 tech_department_list_html = self.client.get(self.department_tech_list_url.format(school_id=university.school_id, year=year))
                 tech_department_result = department_parser.parse(tech_department_list_html)
                 if tech_department_result:
-                    self.logger.info(f'[Cross] 爬取 {university.school_name} 的科系列表成功, 共計 {len(department_result)} 個科系')
+                    self.logger.info(f'[Cross] 爬取 {university.school_name} 的科系列表成功, 共計 {len(tech_department_result)} 個科系')
                     
                     for department in tech_department_result:
                         self.logger.info(f'[Cross] 現在爬取學校科系: {university.school_name} {department.department_name} 年度: {year}')
@@ -326,7 +374,7 @@ class CrossCrawler(Crawler):
             # Step1. 找到入學管道的 id
             method = session.query(AdmissionType).filter(AdmissionType.name == '學測查榜').first()
             if not method:
-                # 如果沒有大學繁星的入學管道, 則新增一個
+                # 如果沒有學測查榜的入學管道, 則新增一個
                 session.add(AdmissionType(name='學測查榜'))
                 session.commit()
                 method = session.query(AdmissionType).filter(AdmissionType.name == '學測查榜').first()
@@ -345,28 +393,50 @@ class CrossCrawler(Crawler):
             # Step 3. 存入榜單資訊
             admission_info = session.query(AdmissionList).filter(AdmissionList.year == year,
                                                                  AdmissionList.method_id == method.id,
-                                                                 AdmissionList.school_department_id == department.department_id).first()
+                                                                 AdmissionList.school_department_id == school.id).first()
             if not admission_info:
                 session.add(AdmissionList(
                     year=year,
                     method_id=method.id,
-                    school_department_id=department.department_id,
+                    school_department_id=school.id,
                     university_apply='大學個人申請' if not is_tech_university else '科大四技申請'
                 ))
                 session.commit()
                 admission_info = session.query(AdmissionList).filter(AdmissionList.year == year,
                                                                      AdmissionList.method_id == method.id,
-                                                                     AdmissionList.school_department_id == department.department_id).first()
+                                                                     AdmissionList.school_department_id == school.id).first()
+            else:
+                session.query(AdmissionList).filter(AdmissionList.id == admission_info.id).update({
+                    AdmissionList.year: year,
+                    AdmissionList.method_id: method.id,
+                    AdmissionList.school_department_id: school.id,
+                    AdmissionList.university_apply: '大學個人申請' if not is_tech_university else '科大四技申請',
+                })
+                session.commit()
+                
             # Step 4. 存入上榜資訊
             for admission in admissions:
                 for school in admission.schools:
                     if school.school_name == university.school_name and school.department_name == department.department_name:
-                        session.add(AdmissionPerson(
-                            admission_list_id=admission_info.id,
-                            admission_ticket=admission.ticket,
-                            exam_area=admission.exam_area,
-                            admission_status=school.status,
-                        ))
+                        person = session.query(AdmissionPerson).filter(AdmissionPerson.admission_list_id == admission_info.id,
+                                                                        AdmissionPerson.admission_ticket == admission.ticket).first()
+                        if not person:
+                            try:
+                                session.add(AdmissionPerson(
+                                    admission_list_id=admission_info.id,
+                                    admission_ticket=admission.ticket,
+                                    exam_area=admission.exam_area,
+                                    admission_status=school.status,
+                                ))
+                            except ValueError as e:
+                                self.logger.warning('[Cross] 存入錄取資訊失敗, 原因: {}, 可能是欄位錯誤'.format(e))
+                        else:
+                            session.query(AdmissionPerson).filter(AdmissionPerson.id == person.id).update({
+                                AdmissionPerson.admission_list_id: admission_info.id,
+                                AdmissionPerson.admission_ticket: admission.ticket,
+                                AdmissionPerson.exam_area: admission.exam_area,
+                                AdmissionPerson.admission_status: school.status,
+                            })
             session.commit()
 
 class VtechCrawler(Crawler):
@@ -422,7 +492,7 @@ class VtechCrawler(Crawler):
             # Step1. 找到入學管道的 id
             method = session.query(AdmissionType).filter(AdmissionType.name == '統測甄選').first()
             if not method:
-                # 如果沒有大學繁星的入學管道, 則新增一個
+                # 如果沒有統測甄選的入學管道, 則新增一個
                 session.add(AdmissionType(name='統測甄選'))
                 session.commit()
                 method = session.query(AdmissionType).filter(AdmissionType.name == '統測甄選').first()
@@ -441,28 +511,50 @@ class VtechCrawler(Crawler):
             # Step 3. 存入榜單資訊
             admission_info = session.query(AdmissionList).filter(AdmissionList.year == year,
                                                                  AdmissionList.method_id == method.id,
-                                                                 AdmissionList.school_department_id == department.department_id).first()
+                                                                 AdmissionList.school_department_id == school.id).first()
             if not admission_info:
                 session.add(AdmissionList(
                     year=year,
                     method_id=method.id,
-                    school_department_id=department.department_id,
+                    school_department_id=school.id,
                     group_code=department.group,
                 ))
                 session.commit()
                 admission_info = session.query(AdmissionList).filter(AdmissionList.year == year,
                                                                      AdmissionList.method_id == method.id,
-                                                                     AdmissionList.school_department_id == department.department_id).first()
+                                                                     AdmissionList.school_department_id == school.id).first()
+            else:
+                session.query(AdmissionList).filter(AdmissionList.id == admission_info.id).update({
+                    AdmissionList.year: year,
+                    AdmissionList.method_id: method.id,
+                    AdmissionList.school_department_id: school.id,
+                    AdmissionList.group_code: department.group,
+                })
+                session.commit()
+                
             # Step 4. 存入上榜資訊
             for admission in admissions:
                 for school in admission.schools:
                     if school.school_name == university.school_name and school.department_name == department.department_name:
-                        session.add(AdmissionPerson(
-                            admission_list_id=admission_info.id,
-                            admission_ticket=admission.ticket,
-                            admission_status=school.status,
-                            second_stage_status=school.status,
-                        ))
+                        person = session.query(AdmissionPerson).filter(AdmissionPerson.admission_list_id == admission_info.id,
+                                                                        AdmissionPerson.admission_ticket == admission.ticket).first()
+                        if not person:
+                            try:
+                                session.add(AdmissionPerson(
+                                    admission_list_id=admission_info.id,
+                                    admission_ticket=admission.ticket,
+                                    admission_status=school.status,
+                                    second_stage_status=school.status,
+                                ))
+                            except ValueError as e:
+                                self.logger.warning('[Vtech] 存入錄取資訊失敗, 原因: {}, 可能是欄位錯誤'.format(e))
+                        else:
+                            session.query(AdmissionPerson).filter(AdmissionPerson.id == person.id).update({
+                                AdmissionPerson.admission_list_id: admission_info.id,
+                                AdmissionPerson.admission_ticket: admission.ticket,
+                                AdmissionPerson.admission_status: school.status,
+                                AdmissionPerson.second_stage_status: school.status,
+                            })
             session.commit()
 
         
@@ -519,7 +611,7 @@ class TechregCrawler(Crawler):
             # Step1. 找到入學管道的 id
             method = session.query(AdmissionType).filter(AdmissionType.name == '統測分發').first()
             if not method:
-                # 如果沒有大學繁星的入學管道, 則新增一個
+                # 如果沒有統測分發的入學管道, 則新增一個
                 session.add(AdmissionType(name='統測分發'))
                 session.commit()
                 method = session.query(AdmissionType).filter(AdmissionType.name == '統測分發').first()
@@ -538,12 +630,12 @@ class TechregCrawler(Crawler):
             # Step 3. 存入榜單資訊
             admission_info = session.query(AdmissionList).filter(AdmissionList.year == year,
                                                                  AdmissionList.method_id == method.id,
-                                                                 AdmissionList.school_department_id == department.department_id).first()
+                                                                 AdmissionList.school_department_id == school.id).first()
             if not admission_info:
                 session.add(AdmissionList(
                     year=year,
                     method_id=method.id,
-                    school_department_id=department.department_id,
+                    school_department_id=school.id,
                     group_code=department.group,
                     average_score=department.average_score,
                     general_grade=admissions.general_grade,
@@ -554,12 +646,38 @@ class TechregCrawler(Crawler):
                 session.commit()
                 admission_info = session.query(AdmissionList).filter(AdmissionList.year == year,
                                                                      AdmissionList.method_id == method.id,
-                                                                     AdmissionList.school_department_id == department.department_id).first()
+                                                                     AdmissionList.school_department_id == school.id).first()
+            else:
+                session.query(AdmissionList).filter(AdmissionList.id == admission_info.id).update({
+                    AdmissionList.year: year,
+                    AdmissionList.method_id: method.id,
+                    AdmissionList.school_department_id: school.id,
+                    AdmissionList.group_code: department.group,
+                    AdmissionList.average_score: department.average_score,
+                    AdmissionList.general_grade: admissions.general_grade,
+                    AdmissionList.native_grade: admissions.native_grade,
+                    AdmissionList.veteran_grade: admissions.veteran_grade,
+                    AdmissionList.oversea_grade: admissions.oversea_grade,
+                })
+                session.commit()
+                
             # Step 4. 存入上榜資訊
             for admission in admissions.admission_list:
-                session.add(AdmissionPerson(
-                    admission_list_id=admission_info.id,
-                    admission_ticket=admission.ticket,
-                    admission_status='已錄取',
-                ))
+                person = session.query(AdmissionPerson).filter(AdmissionPerson.admission_list_id == admission_info.id,
+                                                               AdmissionPerson.admission_ticket == admission.ticket).first()
+                if not person:
+                    try:
+                        session.add(AdmissionPerson(
+                            admission_list_id=admission_info.id,
+                            admission_ticket=admission.ticket,
+                            admission_status='已錄取',
+                        ))
+                    except ValueError as e:
+                        self.logger.warning('[Techreg] 存入錄取資訊失敗, 原因: {}, 可能是欄位錯誤'.format(e))
+                else:
+                    session.query(AdmissionPerson).filter(AdmissionPerson.id == person.id).update({
+                        AdmissionPerson.admission_list_id: admission_info.id,
+                        AdmissionPerson.admission_ticket: admission.ticket,
+                        AdmissionPerson.admission_status: '已錄取',
+                    })
             session.commit()

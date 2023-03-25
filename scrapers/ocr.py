@@ -5,6 +5,9 @@ import base64
 import numpy as np
 import pytesseract
 
+from scrapers.utils import clean_string
+# from utils import clean_string
+
 """
 Here is Mini Doc for pytesseract
 
@@ -43,6 +46,37 @@ def base64_to_image(base64_string):
     img_data = base64.b64decode(base64_string)
     return Image.open(BytesIO(img_data)).convert('RGB')
 
+def image_to_base64(image: Image.Image):
+    b64 = base64.b64encode(image.tobytes())
+    return b64.decode('utf-8')
+
+def crop_image_by_x_axis(image, start_x=-1, end_x=-1):
+    if isinstance(image, str):
+        image = base64_to_image(image)
+    if start_x == -1:
+        start_x = 0
+    if end_x == -1:
+        end_x = image.width
+    return image.crop((start_x, 0, end_x, image.height))
+
+def crop_image_by_y_axis(image, start_y=-1, end_y=-1):
+    if isinstance(image, str):
+        image = base64_to_image(image)
+    if start_y == -1:
+        start_y = 0
+    if end_y == -1:
+        end_y = image.height
+    return image.crop((0, start_y, image.width, end_y))
+
+def replace_transparent_background(image, color=(0, 0, 0)):
+    if isinstance(image, str):
+        image = base64_to_image(image)
+        
+    image = image.convert('RGBA')
+    new_image = Image.new("RGBA", image.size, color)
+    new_image.paste(image, (0, 0), image)
+    return new_image
+
 class OCR:
     _instance = None
     
@@ -50,11 +84,20 @@ class OCR:
         # 初始化 OCR 引擎 (使用 Tesseract)
         pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
         self.engine = pytesseract.image_to_string
+        self.cache = {}
     
     def ocr(self, image, lang, **kwargs) -> str:
         if isinstance(image, str):
+            hash_key = image
             image = base64_to_image(image)
-        return self.engine(image, lang=lang, **kwargs)
+        else:
+            hash_key = image_to_base64(image)
+            
+        if self.cache.get(hash_key) is not None:
+            return self.cache[hash_key]
+        res = clean_string(self.engine(image, lang=lang, **kwargs))
+        self.cache[hash_key] = res
+        return res
 
     def single_line_ocr(self, image, lang='eng', **kwargs) -> str:
         kwargs['config'] = '--psm 7 --oem 3'
@@ -67,7 +110,11 @@ class OCR:
     def single_character_ocr(self, image, lang='eng', **kwargs) -> str:
         kwargs['config'] = '--psm 10 --oem 3'
         return self.ocr(image, lang, **kwargs)
-        
+
+    def single_line_number_ocr(self, image, lang='eng', **kwargs) -> str:
+        kwargs['config'] = '--psm 7 --oem 3 -c tessedit_char_whitelist=0123456789'
+        return self.ocr(image, lang, **kwargs)
+    
     def get_instance():
         if OCR._instance is None:
             OCR._instance = OCR()

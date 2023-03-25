@@ -2,7 +2,7 @@
 
 from typing import Any, Dict, List
 from bs4 import BeautifulSoup
-from scrapers.ocr import OCR
+from scrapers.ocr import *
 from scrapers.model import *
 from scrapers.utils import *
 # from model import *
@@ -252,6 +252,9 @@ class CrossDepartmentListParser(Parser):
 class CrossAdmissionListParser(Parser):
     def parse(self, html_content: str) -> List[CrossAdmissionModel]:
         adminssion = []
+        # ocr object
+        ocr_obj = OCR.get_instance()
+        
         resp = BeautifulSoup(html_content, 'lxml')
         main_content = resp.find('div', id='mainContent')
         # 取得榜單項目
@@ -264,7 +267,7 @@ class CrossAdmissionListParser(Parser):
                 
                 # 准考證號碼、考區
                 ticket_examarea_element = item_elements[2]
-                ticket = clean_string(OCR.get_instance().single_line_ocr(ticket_examarea_element.select_one('img').get('src')))
+                ticket = clean_string(ocr_obj.single_line_number_ocr(ticket_examarea_element.select_one('img').get('src')))
                 examarea = clean_split(ticket_examarea_element.select_one('a').text, ':')[-1]
 
                 # 學校錄取情況
@@ -284,9 +287,18 @@ class CrossAdmissionListParser(Parser):
                             release_status_element = school_item_elements[2].select_one('img')
                             release_date = clean_string(school_item_elements[2].select_one('div.retestdate').text)
                             if release_status_element:
-                                admit = clean_string(release_status_element.parent.get('class')[0]) == 'leftred'
-                                release_status = clean_string(OCR.get_instance().single_line_ocr(release_status_element.get('src')))
-                                release_status = '正取' if admit else '備取' + release_status
+                                if len(release_status_element.parent.get('class')) == 0:
+                                    admit = False
+                                    release_status = '未錄取'
+                                else:
+                                    prefix_string = clean_string(school_item_elements[2].text)
+                                    admit = clean_string(release_status_element.parent.get('class')[0]) == 'leftred'
+                                    release_img = release_status_element.get('src')
+                                    release_img = crop_image_by_x_axis(release_img, start_x=45)
+                                    release_img = replace_transparent_background(release_img)
+                                    release_status = clean_string(ocr_obj.single_line_number_ocr(release_img))
+                                    release_status = '正取' if admit else '備取' + release_status
+                                    release_status = prefix_string + release_status
                             else:
                                 release_status = '' if not release_date else release_date
                             school_admission_status.append(SchoolAdmissionStatusModel(
@@ -330,6 +342,10 @@ class VtechDepartmentListParser(Parser):
 class VtechAdmissionParser(Parser):
     def parse(self, html_content: str) -> List[VtechAdmissionModel]:
         adminssion = []
+        
+        # ocr object
+        ocr_obj = OCR.get_instance()
+        
         resp = BeautifulSoup(html_content, 'lxml')
         main_content = resp.find('div', id='mainContent')
         # 取得榜單項目
@@ -340,7 +356,7 @@ class VtechAdmissionParser(Parser):
             if item_elements and len(item_elements) == 5:
                 # 准考證號碼
                 ticket_examarea_element = item_elements[2]
-                ticket = clean_string(OCR.get_instance().single_line_ocr(ticket_examarea_element.select_one('img').get('src')))
+                ticket = clean_string(ocr_obj.single_line_number_ocr(ticket_examarea_element.select_one('img').get('src')))
                 
                 # 學校錄取情況
                 school_admission_status = []
@@ -359,11 +375,18 @@ class VtechAdmissionParser(Parser):
                             release_status_element = school_item_elements[2].select_one('img')
                             release_date = clean_string(school_item_elements[2].select_one('div.retestdate').text)
                             if release_status_element:
-                                prefix_string = clean_string(school_item_elements[2].text)
-                                admit = clean_string(release_status_element.parent.get('class')[0]) == 'leftred'
-                                release_status = clean_string(OCR.get_instance().single_line_ocr(release_status_element.get('src')))
-                                release_status = '正取' if admit else '備取' + release_status
-                                release_status = prefix_string + release_status
+                                if len(release_status_element.parent.get('class')) == 0:
+                                    admit = False
+                                    release_status = '未錄取'
+                                else:
+                                    prefix_string = clean_string(school_item_elements[2].text)
+                                    admit = clean_string(release_status_element.parent.get('class')[0]) == 'leftred'
+                                    release_img = release_status_element.get('src')
+                                    release_img = crop_image_by_x_axis(release_img, start_x=45)
+                                    release_img = replace_transparent_background(release_img)
+                                    release_status = clean_string(ocr_obj.single_line_number_ocr(release_img))
+                                    release_status = '正取' if admit else '備取' + release_status
+                                    release_status = prefix_string + release_status
                             else:
                                 release_status = '' if not release_date else release_date
                             school_admission_status.append(SchoolAdmissionStatusModel(
@@ -459,9 +482,9 @@ class TechregAdmissionParser(Parser):
 if __name__ == '__main__':
     import os
     print(os.getcwd())
-    with open(os.path.join(os.getcwd(), 'scrapers\\resources\\cross_test.html'), 'r', encoding='utf-8') as f:
+    with open(os.path.join(os.getcwd(), 'scrapers\\resources\\cross_test3.html'), 'r', encoding='utf-8') as f:
         html_content = f.read()
-        result = CrossAdmissionListParser().parse(html_content)
+        result = StarAdmissionListParser().parse(html_content)
         try:
             print(*result, sep='\n')
         except:

@@ -1,12 +1,19 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, create_engine, Index
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm import Session
+from sqlalchemy.orm import validates
+
 
 Base = declarative_base()
 
 # 榜單
 class AdmissionList(Base):
     __tablename__ = 'AdmissionList'
+    __table_args__ = (
+        Index("idx_admission_list_id", "Id", unique=True),
+        Index('idx_admission_list_year_method_school', 'Year', 'Method', 'SchoolDepartmentID'),
+    )
 
     # 榜單ID
     id = Column('Id', Integer, primary_key=True, comment="榜單ID", autoincrement=True)
@@ -44,11 +51,14 @@ class AdmissionList(Base):
     admission_type = relationship('AdmissionType', back_populates="admission_lists")
     # 一個榜單只會有一間校系，一間校系有很多榜單 : 校系->榜單 = 1->N
     school_department = relationship('SchoolDepartment', back_populates="admission_lists")
-
     
 # 上榜單的人
 class AdmissionPerson(Base):
     __tablename__ = 'AdmissionPerson'
+    __table_args__ = (
+        Index("idx_admission_person_id", "Id", unique=True),
+        Index('idx_admission_person_listId_ticket', 'AdmissionListId', 'AdmissionTicket'),
+    )
     
     # ID
     id = Column('Id', Integer, primary_key=True, comment="ID", autoincrement=True)
@@ -68,20 +78,34 @@ class AdmissionPerson(Base):
     # 一個人有很多榜單，一個榜單只會有一個人 : 榜單->人 = 1->N
     admission_lists = relationship('AdmissionList', back_populates="admission_persons")
     
+    @validates('admission_list_id', 'admission_ticket')
+    def validate(self, key, value):
+        if not value:
+            raise ValueError(f'{key} value is empty')
+        return value
+    
     
 # 錄取方式的類型 (分科/指考, 繁星, 學測, 統測甄選: 統測分發)
 class AdmissionType(Base):
     __tablename__ = 'AdmissionType'
+    __table_args__ = (
+        Index("idx_admission_type_id", "Id", unique=True),
+    )
     
     id = Column('Id', Integer, primary_key=True, comment="錄取方式的類型ID", autoincrement=True)
     name = Column('Name', String(20), comment="錄取方式的類型名稱", nullable=False)
     
     # 一個錄取方式有很多榜單，一個榜單只會有一個錄取方式 : 錄取方式->榜單 = 1->N
     admission_lists = relationship('AdmissionList', back_populates="admission_type")
+    
 
 # 學校系所
 class SchoolDepartment(Base):
     __tablename__ = 'SchoolDepartment'
+    __table_args__ = (
+        Index("idx_school_department_id", "Id", unique=True),
+        Index("idx_school_department_code", "SchoolCode", "DepartmentCode"),
+    )
     
     id = Column('Id', Integer, primary_key=True, comment="校系ID", autoincrement=True)
     school_code = Column('SchoolCode', String(10), comment="學校代碼", nullable=False)
@@ -93,3 +117,6 @@ class SchoolDepartment(Base):
     admission_lists = relationship('AdmissionList', back_populates="school_department")
     
     
+if __name__ == '__main__':
+    engine = create_engine('sqlite:///test.db', echo=True)
+    Base.metadata.create_all(engine)
