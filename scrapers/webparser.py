@@ -1,5 +1,3 @@
-
-
 from typing import Any, Dict, List
 from bs4 import BeautifulSoup
 from scrapers.ocr import *

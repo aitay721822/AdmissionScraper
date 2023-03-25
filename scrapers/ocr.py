@@ -1,12 +1,10 @@
-from io import BytesIO
 import re
-from PIL import Image
 import base64
-import numpy as np
 import pytesseract
-
+from io import BytesIO
+from PIL import Image
 from scrapers.utils import clean_string
-# from utils import clean_string
+
 
 """
 Here is Mini Doc for pytesseract

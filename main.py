@@ -8,7 +8,7 @@ from pydantic import ValidationError
 
 from orm import Base
 from conf import AppConfig
-from scrapers.scraper import Scraper
+from scrapers import Scraper
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-c', '--config_file', type=str, default='config.yaml', help='config file path')

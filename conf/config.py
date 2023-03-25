@@ -1,6 +1,6 @@
-from pydantic import BaseModel, validator
-from pathlib import Path
 import yaml
+from pathlib import Path
+from pydantic import BaseModel, validator
 
 
 class DBConfig(BaseModel):

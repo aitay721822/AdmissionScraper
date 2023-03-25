@@ -1,13 +1,14 @@
 
 
 import logging
-from sqlalchemy.engine import Engine
-from sqlalchemy.orm import Session
 from typing import List
+from sqlalchemy.orm import Session
+from sqlalchemy.engine import Engine
 from orm.model import *
-from scrapers.webparser import *
 from conf import AppConfig
 from scrapers.client import Client
+from scrapers.webparser import *
+
 
 class Crawler:
     """

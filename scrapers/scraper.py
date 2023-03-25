@@ -1,12 +1,12 @@
 import logging
 import time
-from scrapers.model import AvailableYearsModel
-from scrapers.webparser import AvailableYearsParser 
-from scrapers.crawlers import *
 from conf import AppConfig
 from typing import Dict, List
 from sqlalchemy.engine import Engine
 from scrapers.client import Client
+from scrapers.model import AvailableYearsModel
+from scrapers.webparser import AvailableYearsParser 
+from scrapers.crawlers import *
 
 class Scraper:
     

@@ -1,5 +1,5 @@
-import logging
 import time
+import logging
 import requests
 import cloudscraper
 

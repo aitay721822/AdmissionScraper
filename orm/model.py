@@ -1,9 +1,7 @@
-from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, Integer, String, ForeignKey, create_engine, Index
 from sqlalchemy.orm import relationship
-from sqlalchemy.orm import Session
 from sqlalchemy.orm import validates
-
+from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base()
 
