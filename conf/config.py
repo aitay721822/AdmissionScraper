@@ -44,11 +44,16 @@ class LogConfig(BaseModel):
     file: str = 'scraper.log'
     # 日誌格式
     format: str = '%(asctime)s | %(levelname)s | %(name)s | %(message)s | %(filename)s:%(lineno)d'
+    
+class OcrConfig(BaseModel):
+    # ocr path
+    pytesseract_path: str = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
 
 class AppConfig(BaseModel):
     flaresolverr: FlareSolverrConfig = FlareSolverrConfig()
     database: DBConfig = DBConfig()
     logger: LogConfig = LogConfig()
+    ocr: OcrConfig = OcrConfig()
     
     @staticmethod
     def save(cfg, path: str = 'config.yaml'):

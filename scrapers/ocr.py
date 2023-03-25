@@ -81,8 +81,6 @@ class OCR:
     _instance = None
     
     def __init__(self) -> None:
-        # 初始化 OCR 引擎 (使用 Tesseract)
-        pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
         self.engine = pytesseract.image_to_string
         self.cache = {}
     

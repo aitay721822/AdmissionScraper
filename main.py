@@ -1,5 +1,5 @@
 import os
-import sys
+import pytesseract
 import logging
 import argparse
 from sqlalchemy.engine import URL
@@ -55,9 +55,13 @@ def init(config_path: str):
         # migrate database schema
         Base.metadata.create_all(engine)
         return engine
-        
+    
+    def init_ocr_engine(config: AppConfig):
+        # 初始化 OCR 引擎 (使用 Tesseract)
+        pytesseract.pytesseract.tesseract_cmd = config.ocr.pytesseract_path
     
     config = init_config(config_path)
+    init_ocr_engine(config)
     return config, init_logger(config), init_db(config)
     
 def main(config_path):
