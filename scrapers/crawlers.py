@@ -13,7 +13,7 @@ from scrapers.webparser import *
 class Crawler:
     """
     Crawler is an abstract class that defines the interface for all crawlers.
-    All parsers must implement the parse method.
+    All crawlers must implement the `crawl`, `init_parers`, `get_parser` function.
     
     Functions:
         - crawl: process crawling logic, and save the crawled data to the database

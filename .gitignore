@@ -1,5 +1,4 @@
 __pycache__
 resources/
-config.yaml
 db.sqlite3
 scraper.log
