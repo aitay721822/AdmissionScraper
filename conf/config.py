@@ -48,6 +48,8 @@ class LogConfig(BaseModel):
 class OcrConfig(BaseModel):
     # ocr path
     pytesseract_path: str = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
+    # ocr cache path
+    cache_path: str = 'ocr_cache.json'
 
 class AppConfig(BaseModel):
     flaresolverr: FlareSolverrConfig = FlareSolverrConfig()

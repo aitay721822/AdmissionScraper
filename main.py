@@ -9,6 +9,7 @@ from pydantic import ValidationError
 from orm import Base
 from conf import AppConfig
 from scrapers import Scraper
+from scrapers.ocr import OCR
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-c', '--config_file', type=str, default='config.yaml', help='config file path')
@@ -62,16 +63,23 @@ def init(config_path: str):
     def init_ocr_engine(config: AppConfig):
         # 初始化 OCR 引擎 (使用 Tesseract)
         pytesseract.pytesseract.tesseract_cmd = config.ocr.pytesseract_path
-    
+        # OCR Cache 路徑
+        OCR().load_cache(config.ocr.cache_path)
+        
     config = init_config(config_path)
     init_ocr_engine(config)
     return config, init_logger(config), init_db(config)
+
+def app_exit(config: AppConfig):
+    # 保存 OCR Cache 
+    OCR().save_cache(config.ocr.cache_path)
     
 def main(config_path, scrape_method, scrape_year):
     cfg, logger, db = init(config_path)
     logger.info('initialized configuration, start to scraping data!')
     crawler = Scraper(cfg, db)
     crawler.run(scrape_method, scrape_year)
+    app_exit(cfg)
     
 if __name__ == '__main__':
     arg = parser.parse_args()

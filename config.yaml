@@ -18,3 +18,4 @@ logger:
   format: '%(asctime)s | %(levelname)s | %(name)s | %(message)s | %(filename)s:%(lineno)d'
 ocr:
   pytesseract_path: C:\Program Files\Tesseract-OCR\tesseract.exe
+  cache_path: ocr_cache.json

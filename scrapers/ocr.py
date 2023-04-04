@@ -1,12 +1,14 @@
 import re
+import os
+import json
 import base64
 import pytesseract
 from io import BytesIO
 from PIL import Image
-from scrapers.utils import clean_string
-from scrapers.meta import Singleton
-# from utils import clean_string
-# from meta import Singleton
+# from scrapers.utils import clean_string
+# from scrapers.meta import Singleton
+from utils import clean_string
+from meta import Singleton
 
 
 """
@@ -122,3 +124,14 @@ class OCR(metaclass=Singleton):
     def single_line_number_ocr(self, image, lang='eng', **kwargs) -> str:
         kwargs['config'] = '--psm 7 --oem 3 -c tessedit_char_whitelist=0123456789'
         return self.ocr(image, lang, **kwargs)
+    
+    def load_cache(self, path):
+        if not os.path.exists(path):
+            return 
+        
+        with open(path, 'r', encoding='utf8') as f:
+            self.cache = json.load(f)
+
+    def save_cache(self, path):
+        with open(path, 'w', encoding='utf8') as f:
+            self.cache = json.dump(self.cache, f)
