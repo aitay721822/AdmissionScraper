@@ -17,6 +17,7 @@ admission_scraper/      // 專案根目錄
 │  ├─ client.py         // 請求客戶端
 │  ├─ crawlers.py       // 設計爬取邏輯
 │  ├─ model.py          // 結構化爬取下來的資料
+│  ├─ meta.py           // 單例模式實現
 │  ├─ ocr.py            // OCR 模組
 │  ├─ scraper.py        // 爬蟲主程式
 │  ├─ utils.py          // 輔助字串清理的工具類
@@ -56,6 +57,14 @@ admission_scraper/      // 專案根目錄
 
     ```bash
     python main.py
+    ```
+
+5. (可選) 針對某個年度、方法爬取指定入學管道的資料 (`-m`、`-y` 參數必須同時設定才有效)
+
+   (`exam` 代表分科/指考、`star` 代表繁星入學、`cross` 代表學測查榜、`vtech` 代表統測甄試、`techreg` 代表統測分發。)
+
+    ```bash
+    python main.py -m 'exam' -y '111'
     ```
 
 ## 預設設定檔 (`config.yaml`)

@@ -3,11 +3,14 @@ from bs4 import BeautifulSoup
 from scrapers.ocr import *
 from scrapers.model import *
 from scrapers.utils import *
+from scrapers.meta import Singleton
 # from model import *
 # from ocr import *
 # from utils import *
+# from meta import Singleton
 
-class Parser:
+
+class Parser():
     """
     Parser is an abstract class that defines the interface for all parsers.
     All parsers must implement the parse method.
@@ -251,7 +254,7 @@ class CrossAdmissionListParser(Parser):
     def parse(self, html_content: str) -> List[CrossAdmissionModel]:
         adminssion = []
         # ocr object
-        ocr_obj = OCR.get_instance()
+        ocr_obj = OCR()
         
         resp = BeautifulSoup(html_content, 'lxml')
         main_content = resp.find('div', id='mainContent')
@@ -261,12 +264,33 @@ class CrossAdmissionListParser(Parser):
         while row:
             item_elements = row.find_all('td', recursive=False)
             if item_elements and len(item_elements) == 5:
-                # TODO: 名稱 OCR
                 
                 # 准考證號碼、考區
                 ticket_examarea_element = item_elements[2]
                 ticket = clean_string(ocr_obj.single_line_number_ocr(ticket_examarea_element.select_one('img').get('src')))
                 examarea = clean_split(ticket_examarea_element.select_one('a').text, ':')[-1]
+
+                # 名稱 OCR (準確度不高)
+                # name = ''
+                name = ''
+                name_element = item_elements[3]
+                match_img_pattern = '<img.*?/>'
+                match_star_pattern = '(?:>)([*])(?:<)'
+                imgs = [m.end() for m in re.finditer(match_img_pattern, str(name_element))]
+                star = [m.end() for m in re.finditer(match_star_pattern, str(name_element))]
+                if imgs and star:
+                    star_position = star[0]
+                    image_element = name_element.find_next('img')
+                    for img_position in imgs:
+                        if img_position > star_position:
+                            name += '*'
+                        image = put_center(image_element.get('src'), (255,255,255), scale=2)
+                        name += clean_string(ocr_obj.single_character_ocr(image, lang='chi_tra'))
+                        image_element = image_element.find_next_sibling('img')
+                    if star_position > imgs[-1]:
+                        name += '*'
+                else:
+                    name = '*'
 
                 # 學校錄取情況
                 school_admission_status = []
@@ -309,7 +333,7 @@ class CrossAdmissionListParser(Parser):
                 adminssion.append(CrossAdmissionModel(
                     ticket,
                     examarea,
-                    '',
+                    name,
                     school_admission_status
                 ))
             row = row.find_next_sibling('tr')
@@ -342,7 +366,7 @@ class VtechAdmissionParser(Parser):
         adminssion = []
         
         # ocr object
-        ocr_obj = OCR.get_instance()
+        ocr_obj = OCR()
         
         resp = BeautifulSoup(html_content, 'lxml')
         main_content = resp.find('div', id='mainContent')
@@ -355,6 +379,28 @@ class VtechAdmissionParser(Parser):
                 # 准考證號碼
                 ticket_examarea_element = item_elements[2]
                 ticket = clean_string(ocr_obj.single_line_number_ocr(ticket_examarea_element.select_one('img').get('src')))
+
+                # 名稱 OCR (準確度不高)
+                # name = ''
+                name = ''
+                name_element = item_elements[3]
+                match_img_pattern = '<img.*?/>'
+                match_star_pattern = '(?:>)([*])(?:<)'
+                imgs = [m.end() for m in re.finditer(match_img_pattern, str(name_element))]
+                star = [m.end() for m in re.finditer(match_star_pattern, str(name_element))]
+                if imgs and star:
+                    star_position = star[0]
+                    image_element = name_element.find_next('img')
+                    for img_position in imgs:
+                        if img_position > star_position:
+                            name += '*'
+                        image = put_center(image_element.get('src'), (255,255,255), scale=2)
+                        name += clean_string(ocr_obj.single_character_ocr(image, lang='chi_tra'))
+                        image_element = image_element.find_next_sibling('img')
+                    if star_position > imgs[-1]:
+                        name += '*'
+                else:
+                    name = '*'
                 
                 # 學校錄取情況
                 school_admission_status = []
@@ -396,7 +442,7 @@ class VtechAdmissionParser(Parser):
                     school_row = school_row.find_next_sibling('tr')
                 adminssion.append(VtechAdmissionModel(
                     ticket,
-                    '',
+                    name,
                     school_admission_status
                 ))
             row = row.find_next_sibling('tr')
@@ -480,9 +526,10 @@ class TechregAdmissionParser(Parser):
 if __name__ == '__main__':
     import os
     print(os.getcwd())
-    with open(os.path.join(os.getcwd(), 'scrapers\\resources\\cross_test3.html'), 'r', encoding='utf-8') as f:
+    pytesseract.pytesseract.tesseract_cmd = 'C:\\Program Files\\Tesseract-OCR\\tesseract.exe'
+    with open(os.path.join(os.getcwd(), 'scrapers\\resources\\vtech_test.html'), 'r', encoding='utf-8') as f:
         html_content = f.read()
-        result = StarAdmissionListParser().parse(html_content)
+        result = VtechAdmissionParser().parse(html_content)
         try:
             print(*result, sep='\n')
         except:

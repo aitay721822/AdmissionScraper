@@ -4,6 +4,9 @@ import pytesseract
 from io import BytesIO
 from PIL import Image
 from scrapers.utils import clean_string
+from scrapers.meta import Singleton
+# from utils import clean_string
+# from meta import Singleton
 
 
 """
@@ -39,10 +42,10 @@ OCR Engine Mode (OEM):
 """
 
 base64_regex_pattern = re.compile(r'^.+?(;base64),')
-def base64_to_image(base64_string):
+def base64_to_image(base64_string, mode='RGB'):
     base64_string = base64_regex_pattern.sub('', base64_string)
     img_data = base64.b64decode(base64_string)
-    return Image.open(BytesIO(img_data)).convert('RGB')
+    return Image.open(BytesIO(img_data)).convert(mode)
 
 def image_to_base64(image: Image.Image):
     b64 = base64.b64encode(image.tobytes())
@@ -68,15 +71,24 @@ def crop_image_by_y_axis(image, start_y=-1, end_y=-1):
 
 def replace_transparent_background(image, color=(0, 0, 0)):
     if isinstance(image, str):
-        image = base64_to_image(image)
+        image = base64_to_image(image, mode='RGBA')
         
     image = image.convert('RGBA')
     new_image = Image.new("RGBA", image.size, color)
     new_image.paste(image, (0, 0), image)
     return new_image
 
-class OCR:
-    _instance = None
+def put_center(image, color=(0,0,0), scale=1):
+    if isinstance(image, str):
+        image = base64_to_image(image, mode='RGBA')
+
+    image = image.convert('RGBA')
+    size = (image.width * scale, image.height * scale)
+    background = Image.new('RGBA', size, color)
+    background.paste(image, (int((size[0] - image.width) / 2), int((size[1] - image.height) / 2)), image)
+    return background
+
+class OCR(metaclass=Singleton):
     
     def __init__(self) -> None:
         self.engine = pytesseract.image_to_string
@@ -110,8 +122,3 @@ class OCR:
     def single_line_number_ocr(self, image, lang='eng', **kwargs) -> str:
         kwargs['config'] = '--psm 7 --oem 3 -c tessedit_char_whitelist=0123456789'
         return self.ocr(image, lang, **kwargs)
-    
-    def get_instance():
-        if OCR._instance is None:
-            OCR._instance = OCR()
-        return OCR._instance

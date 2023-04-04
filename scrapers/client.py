@@ -2,15 +2,15 @@ import time
 import logging
 import requests
 import cloudscraper
+from scrapers.meta import Singleton
 
-class Client:
-    
-    _instance = None
+
+class Client(metaclass=Singleton):
     
     def __init__(self, 
                  config, 
                  logger: logging.Logger = logging.getLogger('client')):
-        self.config = config
+        self.config = config            
         self.logger = logger
         self.cookies = None
         self.user_agent = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/110.0.0.0 Safari/537.36'
@@ -58,12 +58,6 @@ class Client:
             retry += 1
         self.logger.error(f'請求失敗，已超過最大重試次數: {self.config.retry}')
         return None
-            
-    @staticmethod
-    def get_instance(config):
-        if Client._instance is None:
-            Client._instance = Client(config)
-        return Client._instance
     
 if __name__ == '__main__':
     
@@ -75,5 +69,5 @@ if __name__ == '__main__':
         
     config = FlareSolverrConfig()
     client = Client(config)
-    for i in range(10):
-        print(client.get('https://www.com.tw/'))
+    for i in range(2):
+        print(client.get('https://www.google.com/'))

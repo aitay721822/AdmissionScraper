@@ -7,10 +7,11 @@ from sqlalchemy.engine import Engine
 from orm.model import *
 from conf import AppConfig
 from scrapers.client import Client
+from scrapers.meta import Singleton
 from scrapers.webparser import *
 
 
-class Crawler:
+class Crawler(metaclass=Singleton):
     """
     Crawler is an abstract class that defines the interface for all crawlers.
     All crawlers must implement the `crawl`, `init_parers`, `get_parser` function.
@@ -24,7 +25,7 @@ class Crawler:
         self.logger = logging.getLogger('crawler')
         
         self.db = db
-        self.client = Client.get_instance(config.flaresolverr)
+        self.client = Client(config.flaresolverr)
         self.parsers = {} 
         self.init_parsers()
     
@@ -426,6 +427,7 @@ class CrossCrawler(Crawler):
                                 session.add(AdmissionPerson(
                                     admission_list_id=admission_info.id,
                                     admission_ticket=admission.ticket,
+                                    name=admission.name,
                                     exam_area=admission.exam_area,
                                     admission_status=school.status,
                                 ))
@@ -435,6 +437,7 @@ class CrossCrawler(Crawler):
                             session.query(AdmissionPerson).filter(AdmissionPerson.id == person.id).update({
                                 AdmissionPerson.admission_list_id: admission_info.id,
                                 AdmissionPerson.admission_ticket: admission.ticket,
+                                AdmissionPerson.name: admission.name,
                                 AdmissionPerson.exam_area: admission.exam_area,
                                 AdmissionPerson.admission_status: school.status,
                             })
@@ -544,6 +547,7 @@ class VtechCrawler(Crawler):
                                 session.add(AdmissionPerson(
                                     admission_list_id=admission_info.id,
                                     admission_ticket=admission.ticket,
+                                    name=admission.name,
                                     admission_status=school.status,
                                     second_stage_status=school.status,
                                 ))
@@ -553,6 +557,7 @@ class VtechCrawler(Crawler):
                             session.query(AdmissionPerson).filter(AdmissionPerson.id == person.id).update({
                                 AdmissionPerson.admission_list_id: admission_info.id,
                                 AdmissionPerson.admission_ticket: admission.ticket,
+                                AdmissionPerson.name: admission.name,
                                 AdmissionPerson.admission_status: school.status,
                                 AdmissionPerson.second_stage_status: school.status,
                             })
@@ -671,6 +676,7 @@ class TechregCrawler(Crawler):
                         session.add(AdmissionPerson(
                             admission_list_id=admission_info.id,
                             admission_ticket=admission.ticket,
+                            name=admission.name,
                             admission_status='已錄取',
                         ))
                     except ValueError as e:
@@ -679,6 +685,7 @@ class TechregCrawler(Crawler):
                     session.query(AdmissionPerson).filter(AdmissionPerson.id == person.id).update({
                         AdmissionPerson.admission_list_id: admission_info.id,
                         AdmissionPerson.admission_ticket: admission.ticket,
+                        AdmissionPerson.name: admission.name,
                         AdmissionPerson.admission_status: '已錄取',
                     })
             session.commit()

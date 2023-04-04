@@ -8,6 +8,7 @@ from scrapers.model import AvailableYearsModel
 from scrapers.webparser import AvailableYearsParser 
 from scrapers.crawlers import *
 
+
 class Scraper:
     
     base_url = 'https://www.com.tw/'
@@ -17,7 +18,7 @@ class Scraper:
         
         self.config = config
         self.db = db
-        self.client = Client.get_instance(config.flaresolverr)
+        self.client = Client(config.flaresolverr)
         self.crawlers: Dict[str, Crawler] = {
             'cross': CrossCrawler(config, db),
             'vtech': VtechCrawler(config, db),
@@ -34,7 +35,15 @@ class Scraper:
         
         return parsed
 
-    def run(self):
+    def run(self, scrape_method: str = None, scrape_year: str = None):
+        if scrape_method and scrape_year:
+            crawler = self.crawlers.get(scrape_method)
+            if not crawler:
+                raise KeyError(f'找不到 {scrape_method} 入學管道的爬蟲')
+            crawler.crawl(scrape_year)
+            self.logger.info('爬取完成')
+            return
+        
         # 爬取學年度資料 (e.g. 111、110、109, ...)
         self.logger.info("開始爬取學年度資料")
         available_years = self.fetch_available_years()

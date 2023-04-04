@@ -12,6 +12,9 @@ from scrapers import Scraper
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-c', '--config_file', type=str, default='config.yaml', help='config file path')
+parser.add_argument('-m', '--method', type=str, default=None, help='scrape method')
+parser.add_argument('-y', '--year', type=str, default=None, help='scrape year')
+parser.add_argument('-v', '--version', action='version', version='Admission Scrapers 1.0.0')
 
 def init(config_path: str):
     def init_config(config_path: str) -> AppConfig:
@@ -64,12 +67,12 @@ def init(config_path: str):
     init_ocr_engine(config)
     return config, init_logger(config), init_db(config)
     
-def main(config_path):
+def main(config_path, scrape_method, scrape_year):
     cfg, logger, db = init(config_path)
     logger.info('initialized configuration, start to scraping data!')
     crawler = Scraper(cfg, db)
-    crawler.run()
+    crawler.run(scrape_method, scrape_year)
     
 if __name__ == '__main__':
     arg = parser.parse_args()
-    main(arg.config_file)
+    main(arg.config_file, arg.method, arg.year)
