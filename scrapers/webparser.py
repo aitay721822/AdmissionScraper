@@ -285,7 +285,8 @@ class CrossAdmissionListParser(Parser):
                         if img_position > star_position:
                             name += '*'
                         image = put_center(image_element.get('src'), (255,255,255), scale=2)
-                        name += clean_string(ocr_obj.single_character_ocr(image, lang='chi_tra'))
+                        image = dilate(image, kernel=(2,2), iterations=2)
+                        name += clean_string(ocr_obj.single_character_ocr(image, lang='chi_tra_mjh'))
                         image_element = image_element.find_next_sibling('img')
                     if star_position > imgs[-1]:
                         name += '*'
@@ -395,7 +396,8 @@ class VtechAdmissionParser(Parser):
                         if img_position > star_position:
                             name += '*'
                         image = put_center(image_element.get('src'), (255,255,255), scale=2)
-                        name += clean_string(ocr_obj.single_character_ocr(image, lang='chi_tra'))
+                        image = dilate(image, kernel=(2,2), iterations=2)
+                        name += clean_string(ocr_obj.single_character_ocr(image, lang='chi_tra_mjh'))
                         image_element = image_element.find_next_sibling('img')
                     if star_position > imgs[-1]:
                         name += '*'

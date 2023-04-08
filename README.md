@@ -5,27 +5,29 @@
 ## 專案結構
 
 ```c
-admission_scraper/      // 專案根目錄
-├─ conf/                // 設定檔模組
-│  ├─ __init__.py       // conf package 
-│  ├─ config.py         // 設定檔類別，包含載入、儲存、預設值功能
-├─ orm/                 // SQL Model 模組
-│  ├─ __init__.py       // orm package
-│  ├─ model.py          // SQL Schema 定義
-├─ scrapers/            // 爬蟲模組
-│  ├─ __init__.py       // scrapers package
-│  ├─ client.py         // 請求客戶端
-│  ├─ crawlers.py       // 設計爬取邏輯
-│  ├─ model.py          // 結構化爬取下來的資料
-│  ├─ meta.py           // 單例模式實現
-│  ├─ ocr.py            // OCR 模組
-│  ├─ scraper.py        // 爬蟲主程式
-│  ├─ utils.py          // 輔助字串清理的工具類
-│  ├─ webparser.py      // 解析邏輯
-├─ .gitignore           // .gitignore
-├─ main.py              // 專案進入點
-├─ README.md            // 說明文件
-├─ requirements.txt     // 所需套件
+admission_scraper/              // 專案根目錄
+├─ conf/                        // 設定檔模組
+│  ├─ __init__.py               // conf package 
+│  ├─ config.py                 // 設定檔類別，包含載入、儲存、預設值功能
+├─ orm/                         // SQL Model 模組
+│  ├─ __init__.py               // orm package
+│  ├─ model.py                  // SQL Schema 定義
+├─ scrapers/                    // 爬蟲模組
+│  ├─ __init__.py               // scrapers package
+│  ├─ client.py                 // 請求客戶端
+│  ├─ crawlers.py               // 設計爬取邏輯
+│  ├─ model.py                  // 結構化爬取下來的資料
+│  ├─ meta.py                   // 單例模式實現
+│  ├─ ocr.py                    // OCR 模組
+│  ├─ scraper.py                // 爬蟲主程式
+│  ├─ utils.py                  // 輔助字串清理的工具類
+│  ├─ webparser.py              // 解析邏輯
+├─ resources/                   // 資源檔案路徑
+│  ├─ chi_tra_mjh.traineddata   // 繁體中文 OCR 訓練文件 (CER: 0.14%)
+├─ .gitignore                   // .gitignore
+├─ main.py                      // 專案進入點
+├─ README.md                    // 說明文件
+├─ requirements.txt             // 所需套件
 ```
 
 ## 如何繞過 cloudflare ? (2023/03/25)

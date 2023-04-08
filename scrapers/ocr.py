@@ -1,14 +1,16 @@
 import re
 import os
+import cv2
 import json
 import base64
 import pytesseract
+import numpy as np
 from io import BytesIO
 from PIL import Image
-# from scrapers.utils import clean_string
-# from scrapers.meta import Singleton
-from utils import clean_string
-from meta import Singleton
+from scrapers.utils import clean_string
+from scrapers.meta import Singleton
+# from utils import clean_string
+# from meta import Singleton
 
 
 """
@@ -71,24 +73,44 @@ def crop_image_by_y_axis(image, start_y=-1, end_y=-1):
         end_y = image.height
     return image.crop((0, start_y, image.width, end_y))
 
-def replace_transparent_background(image, color=(0, 0, 0)):
+def replace_transparent_background(image, color=(0, 0, 0), mode='RGBA'):
     if isinstance(image, str):
-        image = base64_to_image(image, mode='RGBA')
+        image = base64_to_image(image, mode)
         
-    image = image.convert('RGBA')
-    new_image = Image.new("RGBA", image.size, color)
+    image = image.convert(mode)
+    new_image = Image.new(mode, image.size, color)
     new_image.paste(image, (0, 0), image)
     return new_image
 
-def put_center(image, color=(0,0,0), scale=1):
+def put_center(image, color=(0,0,0), scale=1, mode='RGBA'):
     if isinstance(image, str):
-        image = base64_to_image(image, mode='RGBA')
+        image = base64_to_image(image, mode=mode)
 
-    image = image.convert('RGBA')
+    image = image.convert(mode)
     size = (image.width * scale, image.height * scale)
-    background = Image.new('RGBA', size, color)
+    background = Image.new(mode, size, color)
     background.paste(image, (int((size[0] - image.width) / 2), int((size[1] - image.height) / 2)), image)
     return background
+
+def binary_image(image, threshold=128, mode='RGB'):
+    if isinstance(image, str):
+        image = base64_to_image(image, mode='L')
+        
+    image = image.convert('L')
+    binary_image = image.point(lambda x: 0 if x >= threshold else 255, '1')
+    return binary_image.convert(mode)
+
+def erode(image, kernel=(3,3), iterations=1, mode='RGB'):
+    image = binary_image(image, mode=mode)
+    image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+    erosion = cv2.erode(image, np.ones(kernel, np.uint8), iterations=iterations)
+    return Image.fromarray(erosion)
+
+def dilate(image, kernel=(3,3), iterations=1, mode='RGB'):
+    image = binary_image(image, mode=mode)
+    image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+    dilation = cv2.dilate(image, np.ones(kernel, np.uint8), iterations=iterations)
+    return Image.fromarray(dilation)
 
 class OCR(metaclass=Singleton):
     

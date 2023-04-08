@@ -1,4 +1,5 @@
 __pycache__
-resources/
-db.sqlite3
+html_resources/
+*.sqlite3
 scraper.log
+ocr_cache.json

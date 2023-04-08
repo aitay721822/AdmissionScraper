@@ -1,11 +1,11 @@
 import os
+import shutil
 import pytesseract
 import logging
 import argparse
 from sqlalchemy.engine import URL
 from sqlalchemy import create_engine
 from pydantic import ValidationError
-
 from orm import Base
 from conf import AppConfig
 from scrapers import Scraper
@@ -63,6 +63,19 @@ def init(config_path: str):
     def init_ocr_engine(config: AppConfig):
         # 初始化 OCR 引擎 (使用 Tesseract)
         pytesseract.pytesseract.tesseract_cmd = config.ocr.pytesseract_path
+        # 複製 Tesseract 訓練資料到指定路徑
+        pytesseract_dir = os.path.dirname(config.ocr.pytesseract_path)
+        tessdata_path = os.path.join(pytesseract_dir, 'tessdata', 'chi_tra_mjh.traineddata')
+        resources_file = os.path.join(os.getcwd(), 'resources', 'chi_tra_mjh.traineddata')
+        if not os.path.exists(tessdata_path):
+            # 如果不存在 Tesseract-OCR 路徑，或是訓練資料檔案不存在，則拋出例外
+            if not os.path.exists(pytesseract_dir) or not os.path.exists(os.path.join(resources_file)):
+                raise FileNotFoundError('Tesseract or training data path not found!')
+            # 複製訓練資料到指定路徑(必須是管理員權限)
+            try:
+                shutil.copy(resources_file, tessdata_path)
+            except PermissionError:
+                raise PermissionError('Please run as administrator!')
         # OCR Cache 路徑
         OCR().load_cache(config.ocr.cache_path)
         
