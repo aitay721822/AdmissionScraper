@@ -4,6 +4,8 @@ import requests
 import cloudscraper
 from scrapers.meta import Singleton
 
+class ClientException(Exception):
+    pass
 
 class Client(metaclass=Singleton):
     
@@ -26,8 +28,8 @@ class Client(metaclass=Singleton):
             if resp and resp.status_code == 200:
                 return resp.text
             else:
-                raise Exception(f'請求失敗，狀態碼: {resp.status_code}')
-        except cloudscraper.exceptions.CloudflareChallengeError as e:
+                raise ClientException(f'請求失敗，狀態碼: {resp.status_code}')
+        except (cloudscraper.exceptions.CloudflareChallengeError, ClientException) as e:
             resp = requests.post(self.config.flaresolverr_url, headers={'Content-Type': 'application/json'}, json={
                 "cmd": "request.get",
                 "url": url,
